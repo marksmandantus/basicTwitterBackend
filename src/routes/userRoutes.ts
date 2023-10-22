@@ -1,28 +1,79 @@
 import { Router }from 'express';
+import { PrismaClient } from '@prisma/client';
 
 const router = Router();
+const prisma = new PrismaClient();
 
-router.post('/', (req, res) => {
-    res.status(501).json({message: 'Not implemented'});
+router.post('/', async (req, res) => {
+    const {name, email, username} = req.body;
+    try{
+        const result = await prisma.user.create({
+            data: {
+                name,
+                email,
+                username,
+                bio: "Hello",
+            },
+        });
+        res.json(result);
+    } catch (e) {
+        res.status(400).json({error: "Something went wrong"});
+    }    
 });
 
-router.get('/', (req, res) => {
-    res.status(501).json({message: 'Not implemented'});
+router.get('/', async (req, res) => {
+    const allUsers = await prisma.user.findMany({
+        select: {
+            id: true,
+            username: true,
+            image: true,
+        }})
+    res.json(allUsers);
 });
 
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
     const {id} = req.params;
-    res.status(501).json({message: `Not implemented: ${id}`});
+
+    const user = await prisma.user.findUnique({
+        where: {
+            id: Number(id),
+        },
+        include: {
+            tweets: true,
+        },
+    });
+    res.json(user);
 });
 
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
     const {id} = req.params;
-    res.status(501).json({message: `Not implemented: ${id}`});
+    const {bio, name, image} = req.body;
+
+    try{
+        const updatedUser = await prisma.user.update({
+            where: {
+                id: Number(id),
+            },
+            data: {
+                bio,
+                name,
+                image,
+            },
+        });
+        res.json(updatedUser);
+    } catch (e) {
+        res.status(400).json({error: "Failed to update the user"});
+    }
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
     const {id} = req.params;
-    res.status(501).json({message: `Not implemented: ${id}`});
+    await prisma.user.delete({
+        where: {
+            id: Number(id),
+        },
+    });
+    res.sendStatus(204);
 });
 
 
